@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+import os
+
+from roots import conversations, sql
+
+TEST_DATABASE = "data/conversations.db"
+
+
+os.remove(TEST_DATABASE)
+
+conversations.initialize_database(TEST_DATABASE)
+
+with sql.client(TEST_DATABASE) as cursor:
+    cursor.execute(
+        """
+        INSERT INTO conversations (conversation_id, conversation_name)
+        VALUES
+            (1, 'projects/programming'),
+            (2, 'projects/life'),
+            (3, 'conversations/2025-01-01'),
+            (4, 'archive/book recommendations')
+        ;
+        """
+    )
+    cursor.execute(
+        """
+        INSERT INTO messages (message_id, exchange_id, conversation_id, role, content, context)
+        VALUES
+            (1, 1, 1, 'user', 'programming is fun', 'I like python'),
+            (2, 2, 2, 'user', 'life is fun', 'I am 99 years old'),
+            (3, 3, 3, 'user', 'what should I do today?', null),
+            (4, 4, 4, 'user', 'what book should I read next?', 'I like fantasy')
+        ;
+        """
+    )

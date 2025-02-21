@@ -1,0 +1,9 @@
+anthropic
+faiss-cpu
+flask
+flask-cors
+flask-socketio
+numpy
+ollama
+openai
+tenacity
