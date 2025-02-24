@@ -39,7 +39,7 @@ function SidebarItem({ name, data, depth = 0, onSelect }: SidebarItemProps) {
     <div className="select-none space-y-1">
       <div
         onClick={handleClick}
-        className={`flex items-center cursor-pointer py-2 rounded-md hover:bg-primary hover:dark:bg-secondary-dark opacity-60
+        className={`flex items-center cursor-pointer py-2 rounded-md hover:bg-primary hover:dark:bg-secondary-dark opacity-70
       ${isLeaf ? "ml-4 text-textPrimary dark:text-textPrimary-dark" : "text-textSecondary dark:text-textSecondary-dark"}
       ${isSelected ? "!bg-blue-500" : ""}
       `}

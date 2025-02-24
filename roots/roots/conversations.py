@@ -9,7 +9,7 @@ DATABASE_FILE = "data/conversations.db"
 
 
 def write_default_name():
-    today = datetime.today().strftime("%Y-%m-%d")
+    today = datetime.today().strftime("%Y/%m/%Y-%m-%d")
     return f"conversations/{today}"
 
 

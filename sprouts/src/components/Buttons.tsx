@@ -89,9 +89,13 @@ export function NewConversationButton({ onCreate }: NewConversationButtonProps) 
 
 type RenameConversationButtonProps = {
   onRename?: (newName: string) => void;
+  children?: React.ReactNode;
 };
 
-export function RenameConversationButton({ onRename }: RenameConversationButtonProps) {
+export function RenameConversationButton({
+  onRename,
+  children = null,
+}: RenameConversationButtonProps) {
   const { socket } = useSocket();
   const { currentConversation } = useConversation();
   const [isEditable, setIsEditable] = useState<boolean>(false);
@@ -141,7 +145,9 @@ export function RenameConversationButton({ onRename }: RenameConversationButtonP
         />
       ) : (
         <span className="text-inherit truncate w-full">
-          {currentConversation.conversation_name.split("/").pop()}
+          {children ?? (
+            <span>{currentConversation.conversation_name.split("/").pop()}</span>
+          )}
         </span>
       )}
     </div>
