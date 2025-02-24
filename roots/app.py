@@ -41,12 +41,18 @@ def handle_conversation_request(data: dict[str | int, str]):
 
     session_id = request.sid  # type: ignore
 
+    new_conversation = False
     if conversation_id is None or not conversations.exists(int(conversation_id)):
         conversation = conversations.create(conversation_name)
+        new_conversation = True
     else:
         conversation = conversations.fetch(int(conversation_id))
 
     emit("conversation_response", conversation)
+
+    if new_conversation:
+        handle_request_conversations()
+
     history: list[models.ChatMessage] = [
         {"role": message["role"], "content": message["content"]}
         for message in conversation["messages"]
@@ -64,6 +70,7 @@ def handle_conversation_update(data: dict[str, str]):
         name=data.get("name", None),
     )
     emit("conversation_update", conversation)
+    handle_request_conversations()
 
 
 @socketio.on("new_message")

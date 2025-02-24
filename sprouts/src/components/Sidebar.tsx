@@ -17,7 +17,12 @@ type SidebarItemProps = {
 
 function SidebarItem({ name, data, depth = 0, onSelect }: SidebarItemProps) {
   const { currentConversation, setCurrentConversationByID } = useConversation();
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [isExpanded, setIsExpanded] = useState<boolean>(() => {
+    return (
+      currentConversation.conversation_name.includes(`/${name}`) ||
+      currentConversation.conversation_name.includes(`${name}/`)
+    );
+  });
 
   const isLeaf = "conversation_id" in data;
   const isSelected =
@@ -40,10 +45,10 @@ function SidebarItem({ name, data, depth = 0, onSelect }: SidebarItemProps) {
       <div
         onClick={handleClick}
         className={`flex items-center cursor-pointer py-2 rounded-md hover:bg-primary hover:dark:bg-secondary-dark opacity-70
-      ${isLeaf ? "ml-4 text-textPrimary dark:text-textPrimary-dark" : "text-textSecondary dark:text-textSecondary-dark"}
+      ${isLeaf ? "text-textPrimary dark:text-textPrimary-dark" : "text-textSecondary dark:text-textSecondary-dark"}
       ${isSelected ? "!bg-blue-500" : ""}
       `}
-        style={{ paddingLeft: `${depth * 0.5}rem` }}
+        style={{ paddingLeft: `${depth}rem` }}
       >
         {/* Directory Icon */}
         {!isLeaf && (

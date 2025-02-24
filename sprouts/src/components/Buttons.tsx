@@ -116,7 +116,6 @@ export function RenameConversationButton({
         conversation_id: currentConversation.conversation_id,
         name: trimmedName,
       });
-      socket.emit("request_conversations");
       onRename?.(trimmedName);
     }
     setIsEditable(false);
@@ -129,7 +128,7 @@ export function RenameConversationButton({
 
   return (
     <div
-      className="flex items-center text-textPrimary dark:text-textPrimary-dark hover:text-gray-500 cursor-pointer space-x-2 w-full"
+      className="flex w-full items-center text-textPrimary dark:text-textPrimary-dark hover:text-gray-500 cursor-pointer space-x-2 flex-1 min-w-0"
       onClick={() => setIsEditable(true)}
     >
       {isEditable ? (
@@ -140,14 +139,16 @@ export function RenameConversationButton({
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={handleRename}
-          className="dark:bg-secondary-dark text-textPrimary dark:text-textPrimary-dark rounded outline-none px-2 py-2 w-full max-w-full"
+          className="dark:bg-secondary-dark text-textPrimary dark:text-textPrimary-dark rounded outline-none px-2 py-2 w-[40rem] max-w-full"
         />
       ) : (
-        <span className="text-inherit truncate w-full">
+        <span className="text-inherit truncate flex-1 min-w-0">
           {children ?? (
-            <span>
+            <span className="flex items-center space-x-2">
               <Square3Stack3DIcon className="w-[1rem] h-[1rem] flex-shrink-0 text-inherit" />
-              {currentConversation.conversation_name.split("/").pop()}
+              <span className="truncate">
+                {currentConversation.conversation_name.split("/").pop()}
+              </span>
             </span>
           )}
         </span>

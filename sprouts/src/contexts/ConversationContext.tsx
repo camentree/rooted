@@ -52,7 +52,6 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
       setCurrentConversation((prev) =>
         prev?.conversation_id === conversation.conversation_id ? prev : conversation
       );
-      socket.emit("request_conversations");
     }
 
     socket.on("conversation_response", handleConversationResponse);
