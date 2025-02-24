@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import os
 
 from roots import conversations, sql
@@ -17,7 +17,7 @@ with sql.client(TEST_DATABASE) as cursor:
         VALUES
             (1, 'projects/programming'),
             (2, 'projects/life'),
-            (3, 'conversations/2025-01-01'),
+            (3, 'conversations/2025/01/01/2025-01-01'),
             (4, 'archive/book recommendations')
         ;
         """

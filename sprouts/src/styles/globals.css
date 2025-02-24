@@ -24,3 +24,15 @@ body {
 .markdown ol > li:first-child {
   margin-top: 1rem;
 }
+
+/* This is difficult for accessibility if ever used by not just me */
+::-webkit-scrollbar
+{
+  width: 5px;
+  height: 5px;;
+}
+
+::-webkit-scrollbar-thumb
+{
+  background: rgba(0, 0, 0, 0.5);
+}

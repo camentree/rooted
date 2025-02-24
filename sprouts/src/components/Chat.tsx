@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
@@ -14,22 +14,43 @@ export default function Chat() {
   const { socket, currentConversation, currentModel } = useConversation();
   const { isSidebarOpen, toggleSidebar } = useSidebar();
 
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [backendState, setBackendState] = useState<BackendState>("idle");
   const [messagesState, setMessagesState] = useState<Record<string, BackendState>>({});
-  const [isAtBottom, setIsAtBottom] = useState<boolean>(true);
+  const [isLastMessageVisible, setIsLastMessageVisible] = useState<boolean>(true);
   const [textareaHeight, setTextareaHeight] = useState<number>(80);
-  const [expandChatContainer, setExpandChatContainer] = useState<boolean>(false);
   const [activeMessage, setActiveMessage] = useState<Message | null>(null);
+  const [lastSentMessageId, setLastSentMessageId] = useState<string | null>(null);
 
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
   if (!currentConversation) {
-    return <div className="text-white p-4">No conversation selected.</div>;
+    return (
+      <div className="text-textPrimary dark:text-textPrimary-dark p-4">
+        No conversation selected.
+      </div>
+    );
   }
 
-  // initialize
+  const scrollToLastMessage = useCallback(() => {
+    requestAnimationFrame(() => {
+      if (!chatContainerRef.current || messages.length === 0) return;
+
+      const lastMessageID = messages[messages.length - 1]?.message_id;
+      const lastMessageElement = document.getElementById(lastMessageID);
+
+      if (lastMessageElement) {
+        chatContainerRef.current.scrollTo({
+          top: lastMessageElement.offsetTop - chatContainerRef.current.offsetTop,
+          behavior: "smooth",
+        });
+      }
+    });
+  }, [messages]);
+
+  // respond to initialization
   useEffect(() => {
     function handleBackendUpdate({ message_id, state }: MessageState) {
       setBackendState(state);
@@ -41,18 +62,14 @@ export default function Chat() {
 
     function handleMessageStreamResponse({
       message_id,
-      role,
-      token,
+      content,
     }: {
       message_id: string;
-      role: string;
-      token: string;
+      content: string;
     }) {
       setMessages((prev: Message[]) =>
         prev.map((msg) =>
-          msg.message_id === message_id && msg.role === role
-            ? { ...msg, content: msg.content + token }
-            : msg
+          msg.message_id === message_id ? { ...msg, content: msg.content + content } : msg
         )
       );
     }
@@ -62,7 +79,6 @@ export default function Chat() {
       context,
     }: {
       message_id: string;
-      role: string;
       context: string;
     }) {
       setMessages((prev: Message[]) =>
@@ -84,7 +100,7 @@ export default function Chat() {
     };
   }, [currentConversation, socket]);
 
-  // handle sidebar open
+  // respond to sidebar changes
   useEffect(() => {
     function handleClick() {
       if (isSidebarOpen && chatContainerRef.current) {
@@ -92,7 +108,8 @@ export default function Chat() {
       }
     }
 
-    if (window.innerWidth < 500) {
+    if (window.innerWidth < 768) {
+      // sidebar is relative after 48rem
       chatContainerRef.current?.addEventListener("click", handleClick);
     } else {
       chatContainerRef.current?.removeEventListener("click", handleClick);
@@ -102,56 +119,60 @@ export default function Chat() {
     };
   }, [isSidebarOpen]);
 
-  // update after messages render
+  // respond to initial message rendering
   useEffect(() => {
-    if (messages.length === 0) return;
-    requestAnimationFrame(() => {
-      scrollToBottom();
-    });
-  }, [messages]);
+    if (messages.length > 0 && !isInitialized) {
+      scrollToLastMessage();
+      setIsInitialized(true);
+    }
+  }, [messages, isInitialized]);
 
-  // check if last message is visible
+  // respond to new messages or changes to textarea height
   useEffect(() => {
-    const checkIfAtBottom = () => {
-      if (!chatContainerRef.current || messages.length === 0) return;
+    function handleLastMessageVisibility() {
+      const lastMessageElement = document.getElementById(
+        messages[messages.length - 1]?.message_id
+      );
 
-      const lastMessageID = messages[messages.length - 1]?.message_id;
-      const lastMessageElement = document.getElementById(lastMessageID);
-      if (!lastMessageElement || !chatContainerRef.current) return;
+      if (!chatContainerRef.current || messages.length === 0 || !lastMessageElement)
+        return true;
 
       const chatContainer = chatContainerRef.current;
       const lastMessageBottom =
         lastMessageElement.offsetTop + lastMessageElement.scrollHeight;
       const currentScrollTop = chatContainer.scrollTop;
       const screenHeight = chatContainer.clientHeight;
-
-      setIsAtBottom(currentScrollTop + screenHeight >= lastMessageBottom);
-    };
-
-    chatContainerRef.current?.addEventListener("scroll", checkIfAtBottom);
-    checkIfAtBottom();
-    return () => {
-      chatContainerRef.current?.removeEventListener("scroll", checkIfAtBottom);
-    };
-  }, [messages, textareaHeight]);
-
-  // ergonomic scrolling
-  useEffect(() => {
-    function updateExpandChatContainer() {
-      if (!messagesContainerRef.current || !textareaHeight) return;
-
-      const messagesBottom = messagesContainerRef.current.scrollHeight;
-      const buffer = 30;
-      const windowSize = window.innerHeight - textareaHeight - buffer - 2.5 * 16; // the scroll button is w-5 which is 2.5 rem and 1rem = 16 because of the root font size
-      setExpandChatContainer(messagesBottom >= windowSize);
+      setIsLastMessageVisible(
+        currentScrollTop + screenHeight - textareaHeight >= lastMessageBottom
+      );
     }
 
-    updateExpandChatContainer();
-    window.addEventListener("resize", updateExpandChatContainer);
+    handleLastMessageVisibility();
+    chatContainerRef.current?.addEventListener("scroll", handleLastMessageVisibility);
+    window.addEventListener("resize", handleLastMessageVisibility);
     return () => {
-      window.removeEventListener("resize", updateExpandChatContainer);
+      chatContainerRef.current?.removeEventListener(
+        "scroll",
+        handleLastMessageVisibility
+      );
+      window.removeEventListener("resize", handleLastMessageVisibility);
     };
   }, [messages, textareaHeight]);
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      if (!chatContainerRef.current || !lastSentMessageId) return;
+      const lastSentElement = document.getElementById(lastSentMessageId);
+      if (!lastSentElement) return;
+
+      chatContainerRef.current.scrollTo({
+        top: lastSentElement.offsetTop - chatContainerRef.current.offsetTop,
+        behavior: "smooth",
+      });
+
+      setLastSentMessageId(null);
+    });
+  }, [lastSentMessageId]);
 
   function sendMessage(input: string) {
     if (!input || !input.trim()) return;
@@ -161,7 +182,6 @@ export default function Chat() {
     }
 
     const userMessageID = uuidv4();
-    const assistantMessageID = uuidv4();
     const exchangeID = uuidv4();
     const now = Math.floor(Date.now() / 1000);
 
@@ -176,6 +196,13 @@ export default function Chat() {
       created_at_utc: now,
     };
 
+    setMessages((prev) => [...prev, userMessage]);
+    setMessagesState((prev) => ({
+      ...prev,
+    }));
+    setLastSentMessageId(userMessageID);
+
+    const assistantMessageID = uuidv4();
     const assistantMessage: Message = {
       message_id: assistantMessageID,
       exchange_id: exchangeID,
@@ -187,18 +214,12 @@ export default function Chat() {
       created_at_utc: now,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
-    setMessagesState((prev) => ({
-      ...prev,
-      [assistantMessageID]: "initialized",
-    }));
-    scrollToLastMessage();
-
     setMessages((prev) => [...prev, assistantMessage]);
     socket.emit("new_message", {
       user_message: userMessage,
       assistant_message: assistantMessage,
     });
+
     setTimeout(() => {
       setMessagesState((prev) => {
         const newState = { ...prev };
@@ -219,41 +240,6 @@ export default function Chat() {
   function stopStream() {
     socket.emit("stop");
     setBackendState("idle");
-  }
-
-  function scrollToBottom() {
-    if (
-      !chatContainerRef.current ||
-      !messagesContainerRef.current ||
-      messages.length === 0
-    )
-      return;
-    const buffer = 60;
-    chatContainerRef.current.scrollTo({
-      top:
-        messagesContainerRef.current.scrollHeight -
-        chatContainerRef.current.clientHeight +
-        buffer,
-      behavior: "smooth",
-    });
-  }
-
-  function scrollToLastMessage() {
-    if (
-      !chatContainerRef.current ||
-      !messagesContainerRef.current ||
-      messages.length === 0
-    )
-      return;
-
-    const lastMessageID = messages[messages.length - 1].message_id;
-    const lastMessageElement = document.getElementById(lastMessageID);
-    if (lastMessageElement && chatContainerRef.current) {
-      chatContainerRef.current.scrollTo({
-        top: lastMessageElement.offsetTop - chatContainerRef.current.offsetTop,
-        behavior: "smooth",
-      });
-    }
   }
 
   function formatDate(date: Date) {
@@ -306,9 +292,9 @@ export default function Chat() {
       const isNewDay = lastDate !== currentDate;
       lastDate = currentDate;
       return (
-        <div key={idx}>
+        <div key={idx} id={message.message_id}>
           {isNewDay && (
-            <div className="text-center text-gray-500 text-xs opacity-70">
+            <div className="text-center text-textSecondary dark:text-textSecondary-dark text-xs opacity-70">
               {formatDate(createdAtUTC)}
             </div>
           )}
@@ -327,7 +313,7 @@ export default function Chat() {
       {/* Chat Messages */}
       <div
         ref={chatContainerRef}
-        className="flex-1 min-h-0 min-w-0 overflow-y-auto pt-6 w-full"
+        className="flex-1 min-h-0 min-w-0 overflow-y-auto pt-6 w-full pb-[50vh]"
         style={{ marginBottom: textareaHeight + 40 }}
       >
         <div
@@ -337,24 +323,22 @@ export default function Chat() {
           {renderMessages(messages, messagesState)}
         </div>
         {/* Thinking Indicator */}
-        {backendState === "thinking" && (
-          <div className="flex ml-[1rem] justify-start mt-4">
-            <div className="py-2 bg-chatBubbleBot text-gray-300 rounded-s-2xl rounded-e-2xl">
+        {backendState !== "thinking" && (
+          <div className="flex ml-[1rem] justify-start">
+            <div className="py-2 bg-primary dark:bg-primary-dark text-textPrimary dark:text-textPrimary-dark rounded-s-2xl rounded-e-2xl">
               <div className="flex space-x-1">
-                <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
-                <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:0.2s]" />
-                <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:0.4s]" />
+                <span className="w-2 h-2 bg-textSecondary dark:bg-textSecondary-dark rounded-full animate-bounce" />
+                <span className="w-2 h-2 bg-textSecondary dark:bg-textSecondary-dark rounded-full animate-bounce [animation-delay:0.2s]" />
+                <span className="w-2 h-2 bg-textSecondary dark:bg-textSecondary-dark rounded-full animate-bounce [animation-delay:0.4s]" />
               </div>
             </div>
           </div>
         )}
-        {/* Invisible Space for Ergonomic Scrolling */}
-        {expandChatContainer && <div style={{ height: "50vh" }} aria-hidden="true"></div>}
       </div>
 
       {/* Fading Overlay */}
       <div
-        className="absolute bottom-0 left-0 w-full h-[10rem] pointer-events-none bg-gradient-to-b from-transparent to-chatBg"
+        className="absolute bottom-0 left-0 w-full h-[10rem] pointer-events-none bg-gradient-to-b from-transparent to-primary  dark:to-primary-dark "
         style={{ bottom: `${textareaHeight + 12}px` }}
       ></div>
 
@@ -364,12 +348,12 @@ export default function Chat() {
         style={{ bottom: `${textareaHeight + 60}px` }}
       >
         <button
-          onClick={scrollToBottom}
+          onClick={scrollToLastMessage}
           className={`p-1 aspect-square flex items-center justify-center rounded-full shadow-lg w-8 h-8
-      bg-sidebarBg transition-all duration-500 ${isAtBottom ? "scale-0 opacity-0" : "scale-100 opacity-100"}`}
+      bg-sidebar dark:bg-sidebar-dark hover:scale-150 transition-all duration-500 ${isLastMessageVisible ? "scale-0 opacity-0" : "scale-100 opacity-100"}`}
         >
           <ChevronDownIcon
-            className="w-5 h-5 text-gray-300 relative translate-y-0.5 "
+            className="w-5 h-5 text-textPrimary dark:text-textPrimary-dark relative translate-y-0.5 "
             strokeWidth={1.5}
           />
         </button>

@@ -1,13 +1,12 @@
-import { ChangeModelButton, RenameConversationButton, SidebarButton } from "./Buttons";
+import { RenameConversationButton, SidebarButton } from "./Buttons";
 
 export default function Topbar() {
   return (
-    <div className="flex flex-row flex-1 items-center bg-inputBg min-w-0 min-h-0 px-4">
-      <div className="flex flex-row flex-1 justify-baseline space-x-3">
+    <div className="flex flex-1 flex-row justify-between items-center bg-secondary dark:bg-secondary-dark min-w-0 min-h-0 px-4 h-[3rem]">
+      <div className="flex-1 min-w-0">
         <RenameConversationButton />
-        <ChangeModelButton />
       </div>
-      <div className="relative right-0 translate-y-[3px]">
+      <div className="w-5 h-5 flex-shrink-0">
         <SidebarButton />
       </div>
     </div>

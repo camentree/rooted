@@ -14,21 +14,18 @@ Query: {prompt}
 
 
 def generate(prompt: str) -> str:
-    #     is_broad_prompt, _is_broad_prompt_response = _prompt_requires_broad_context(prompt)
-    #     print(
-    #         "Using broad context?",
-    #         is_broad_prompt,
-    #         ": (response)=",
-    #         _is_broad_prompt_response,
-    #     )
-    #     relevant_memories, _ = fetch_relevant_memories(prompt, broad_search=is_broad_prompt)
-    #     relevant_notes: list[str] = []
-    #     context = f"""
-    # Relevant memories:
-    # {relevant_memories}
-
-    # Relevante notes:
-    # {relevant_notes}
-    # """
-    # return context
-    return "hi"
+    is_broad_prompt, _is_broad_prompt_response = _prompt_requires_broad_context(prompt)
+    print(
+        "Using broad context?",
+        is_broad_prompt,
+        ": (response)=",
+        _is_broad_prompt_response,
+    )
+    relevant_memories, _ = fetch_relevant_memories(prompt, broad_search=is_broad_prompt)
+    relevant_notes: list[str] = []
+    context = ""
+    if relevant_memories:
+        context += f"\nRelevant memories: \n{relevant_memories}"
+    if relevant_notes:
+        context += f"\nRelevant notes: \n{relevant_notes}"
+    return context

@@ -75,12 +75,12 @@ export default function TextInput({
   }
 
   return (
-    <div className="relative bg-inputBg rounded-s-2xl rounded-e-2xl w-full drop-shadow-lg border border-gray-200/10 ">
+    <div className="relative bg-secondary dark:bg-secondary-dark rounded-s-2xl rounded-e-2xl w-full drop-shadow-lg border border-gray-200/10 ">
       <div className="flex items-center gap-2 pt-2 pb-2 opacity-70">
         <textarea
           ref={textareaRef}
           disabled={disabled}
-          className="flex-1 caret-blue-500 bg-transparent rounded-lg p-4 pr-12 text-white outline-none resize-none transition-all duration-200 ease-in-out"
+          className="flex-1 caret-blue-500 bg-transparent rounded-lg p-4 pr-12 text-textPrimary dark:text-textPrimary-dark outline-none resize-none transition-all duration-200 ease-in-out"
           rows={2}
           value={input}
           onChange={(event) => setInput(event.target.value)}
@@ -88,10 +88,10 @@ export default function TextInput({
           placeholder={placeholder}
           style={{ height: textareaHeight }}
         />
-        <div className="absolute bottom-2 right-2 px-2 py-1 aspect-square rounded-full drop-shadow-lg">
+        <div className="absolute bottom-2 right-2 aspect-square rounded-full drop-shadow-lg">
           <button
             onClick={handleSubmit}
-            className="absolute bottom-2 right-2 bg-gray-100 text-gray-900 px-2 py-1 aspect-square rounded-full drop-shadow-lg"
+            className="absolute bottom-2 right-2 bg-gray-100 hover:scale-125 transform transition-transform duration-500 text-gray-900 p-1 aspect-square rounded-full drop-shadow-lg"
           >
             <div
               className={`absolute inset-0 border-2 border-transparent border-t-gray-600 border-l-gray-600 rounded-full transition-opacity duration-[700ms] ease-out ${

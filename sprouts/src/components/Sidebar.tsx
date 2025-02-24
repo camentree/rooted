@@ -1,26 +1,26 @@
 import { useEffect, useState } from "react";
 
+import { ChevronDownIcon } from "@heroicons/react/24/outline";
+
 import { useConversation } from "../contexts/ConversationContext";
 import { Conversation } from "../Types";
-import {
-  RenameConversationButton,
-  NewProjectButton,
-  NewConversationButton,
-} from "./Buttons";
+import { NewProjectButton, NewConversationButton, ChangeModelButton } from "./Buttons";
 
 type ConversationTree = Record<string, ConversationTree | Conversation>;
 
 type SidebarItemProps = {
   name: string;
   data: Conversation | ConversationTree;
+  depth?: number;
   onSelect?: (conversation: Conversation | null) => void;
 };
 
-function SidebarItem({ name, data, onSelect }: SidebarItemProps) {
+function SidebarItem({ name, data, depth = 0, onSelect }: SidebarItemProps) {
   const { currentConversation, setCurrentConversationByID } = useConversation();
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
-  const isLeaf: boolean = "conversation_id" in data;
-  const isSelected: boolean =
+  const isLeaf = "conversation_id" in data;
+  const isSelected =
     isLeaf && data.conversation_id === currentConversation.conversation_id;
 
   function handleClick() {
@@ -30,36 +30,53 @@ function SidebarItem({ name, data, onSelect }: SidebarItemProps) {
         setCurrentConversationByID(newConversation.conversation_id);
         onSelect?.(newConversation);
       }
+    } else {
+      setIsExpanded(!isExpanded);
     }
   }
+
   return (
-    <div>
+    <div className="select-none space-y-1">
       <div
         onClick={handleClick}
-        className={`cursor-pointer select-none
-          ${
-            isLeaf
-              ? "my-1 ml-4 text-white underline-offset-1 hover:underline px-2 py-1 rounded"
-              : "mt-8 text-gray-500 text-xs uppercase font-bold"
-          }
-          ${isSelected ? "translate-x-[-2rem]" : ""}
-          `}
+        className={`flex items-center cursor-pointer py-2 rounded-md hover:bg-primary hover:dark:bg-secondary-dark opacity-60
+      ${isLeaf ? "ml-4 text-textPrimary dark:text-textPrimary-dark" : "text-textSecondary dark:text-textSecondary-dark"}
+      ${isSelected ? "!bg-blue-500" : ""}
+      `}
+        style={{ paddingLeft: `${depth * 0.5}rem` }}
       >
-        <div>
-          {isSelected && <RenameConversationButton />}
-          {!isSelected && <span>{name}</span>}
-        </div>
+        {/* Directory Icon */}
+        {!isLeaf && (
+          <ChevronDownIcon
+            className={`mr-1 w-4 h-4 text-gray-500 transition-transform duration-500 ${
+              isExpanded ? "rotate-0" : "-rotate-90"
+            }`}
+            strokeWidth={3}
+          />
+        )}
+        {/* Directory or File Name  */}
+        <span className="text-sm lowercase">{name}</span>
       </div>
-      {!isLeaf &&
-        Object.entries(data as ConversationTree)
-          .sort(([keyA], [keyB]) => {
-            return name === "conversations"
-              ? keyB.localeCompare(keyA)
-              : keyA.localeCompare(keyB);
-          })
-          .map(([key, value]) => (
-            <SidebarItem key={key} name={key} data={value} onSelect={onSelect} />
-          ))}
+
+      {/* Directory Contents */}
+      <div
+        className={`overflow-hidden transition-all duration-500 ease-in-out ${
+          isExpanded ? "max-h-screen opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        {!isLeaf &&
+          Object.entries(data as ConversationTree)
+            .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+            .map(([key, value]) => (
+              <SidebarItem
+                key={key}
+                name={key}
+                data={value}
+                onSelect={onSelect}
+                depth={depth + 1}
+              />
+            ))}
+      </div>
     </div>
   );
 }
@@ -105,18 +122,27 @@ export default function Sidebar({ onConversationSelect }: SidebarProps) {
   }
 
   return (
-    <div className="overflow-y-auto h-full w-full bg-sidebarBg text-white p-4">
+    <div className="overflow-y-auto h-full w-full bg-sidebar dark:bg-sidebar-dark text-textPrimary dark:text-textPrimary-dark p-4">
       <div className="flex flex-row flex-1 justify-around">
-        <NewProjectButton />
-        <NewConversationButton />
+        <div className="w-5 h-5 hover:scale-125 transition-transform transform duration-300">
+          <NewProjectButton />
+        </div>
+        <div className="w-5 h-5 hover:scale-125 transition-transform transform duration-300">
+          <NewConversationButton />
+        </div>
       </div>
-      {Object.entries(conversationsTree)
-        .sort(([keyA], [keyB]) =>
-          keyA === "projects" ? -1 : keyB === "projects" ? 1 : keyA.localeCompare(keyB)
-        )
-        .map(([key, value]) => (
-          <SidebarItem key={key} name={key} data={value} onSelect={handleSelect} />
-        ))}
+      <div className="my-10 w-full">
+        <ChangeModelButton />
+      </div>
+      <div className="">
+        {Object.entries(conversationsTree)
+          .sort(([keyA], [keyB]) =>
+            keyA === "projects" ? -1 : keyB === "projects" ? 1 : keyA.localeCompare(keyB)
+          )
+          .map(([key, value]) => (
+            <SidebarItem key={key} name={key} data={value} onSelect={handleSelect} />
+          ))}
+      </div>
     </div>
   );
 }

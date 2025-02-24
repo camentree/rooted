@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useState } from "react";
 import { Message, BackendState } from "../Types";
 import MarkdownRenderer from "./MarkdownRenderer";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
@@ -63,7 +63,7 @@ export default function ChatMessage({ message, state, onClick }: ChatMessageProp
           <div
             className={`
               inline-block rounded-s-2xl rounded-e-2xl max-w-max
-              ${message.role === "user" ? "bg-chatBubbleUser text-white px-4 py-2 self-end" : "bg-chatBubbleBot text-gray-300 self-start"}
+              ${message.role === "user" ? "bg-secondary dark:bg-secondary-dark text-textPrimary dark:text-textPrimary-dark px-4 py-2 self-end" : "bg-primary dark:bg-primary-dark text-textPrimary dark:text-textPrimary-dark self-start"}
               ${message.context !== null ? "cursor-pointer" : ""}
             `}
             onClick={handleMessageClick}
@@ -83,7 +83,7 @@ export default function ChatMessage({ message, state, onClick }: ChatMessageProp
           </div>
           {/* Metadata */}
           <div
-            className={`text-xs text-gray-500 mt-1 transition-opacity duration-300 space-x-4 flex flex-column
+            className={`text-xs text-textSecondary dark:text-textSecondary-dark mt-1 transition-opacity duration-300 space-x-4 flex flex-column
             ${showMetadata ? "opacity-50" : "opacity-0"}
             ${message.role === "user" ? "self-end px-2" : "self-start"}
           `}

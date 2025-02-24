@@ -43,12 +43,12 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
     >
       <div
         ref={modalRef}
-        className={`relative bg-chatBg text-white p-4 rounded-md border border-gray-200/20 w-[80vw] h-[80vh] overflow-y-auto
+        className={`relative bg-primary  dark:bg-primary-dark text-textPrimary dark:text-textPrimary-dark p-4 rounded-md border border-gray-200/20 w-[80vw] h-[80vh] overflow-y-auto
           transition-all duration-500 ${isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}
       >
         <button
           onClick={onClose}
-          className="absolute right-2 top-2 p-2 bg-gray-700 text-white rounded-md hover:bg-gray-800"
+          className="absolute right-2 top-2 p-2 bg-gray-700 text-textPrimary dark:text-textPrimary-dark rounded-md hover:scale-150 transform transition-transform duration-500"
         >
           <XMarkIcon className="w-3 h-3 text-inherit" />
         </button>

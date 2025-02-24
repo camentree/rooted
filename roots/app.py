@@ -7,7 +7,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 
 from roots import conversations, models, context, memories
-from roots.types import MessageState, Message, Model
+from roots.types import Message
 
 
 SUMMARIZE_HISTORY_AT = 50
@@ -78,18 +78,13 @@ def handle_new_message(data: dict):
     user_message: Message = data["user_message"]
     assistant_message: Message = data["assistant_message"]
 
-    thinking: MessageState = {
-        "message_id": assistant_message["message_id"],
-        "state": "thinking",
-    }
-    writing: MessageState = {
-        "message_id": assistant_message["message_id"],
-        "state": "writing",
-    }
-    complete: MessageState = {
-        "message_id": assistant_message["message_id"],
-        "state": "complete",
-    }
+    emit(
+        "backend_update",
+        {
+            "message_id": assistant_message["message_id"],
+            "state": "thinking",
+        },
+    )
 
     is_memorable, memory = memories.is_memorable(user_message["content"])
     if is_memorable:
@@ -105,20 +100,18 @@ def handle_new_message(data: dict):
         )
 
     conversations.save_message(user_message)
-    emit("backend_update", thinking)
 
     additional_context = context.generate(user_message["content"])
-    chat_message_content = (
-        user_message["content"]
-        if not additional_context
-        else "\n\n".join((additional_context, user_message["content"]))
-    )
-    chat_histories[session_id].append(
-        {"role": user_message["role"], "content": chat_message_content}
-    )
 
-    if assistant_message["model_id"] is None:
-        assistant_message["model_id"] = models.DECISION_MODEL
+    if additional_context:
+        chat_prompt = "\n\n".join((additional_context, user_message["content"]))
+        assistant_message["context"] = additional_context
+    else:
+        chat_prompt = user_message["content"]
+
+    chat_histories[session_id].append(
+        {"role": user_message["role"], "content": chat_prompt}
+    )
     chat = models.query(
         assistant_message["model_id"],  # type: ignore
         messages=chat_histories[session_id],
@@ -127,7 +120,13 @@ def handle_new_message(data: dict):
     response = ""
     for token in chat:
         response += token
-        emit("backend_update", writing)
+        emit(
+            "backend_update",
+            {
+                "message_id": assistant_message["message_id"],
+                "state": "writing",
+            },
+        )
         emit(
             "message_stream_response",
             {
@@ -145,7 +144,13 @@ def handle_new_message(data: dict):
             "context": additional_context,
         },
     )
-    emit("backend_update", complete)
+    emit(
+        "backend_update",
+        {
+            "message_id": assistant_message["message_id"],
+            "state": "complete",
+        },
+    )
     chat_histories[session_id].append({"role": "assistant", "content": response})
 
 

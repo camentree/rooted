@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useSidebar } from "./contexts/SidebarContext";
 
 import Chat from "./components/Chat";
@@ -10,12 +11,24 @@ import "./styles/globals.css";
 function App() {
   const { isSidebarOpen } = useSidebar();
 
+  useEffect(() => {
+    function handleTab(event: KeyboardEvent) {
+      if (event.key === "Tab") {
+        event.preventDefault();
+      }
+    }
+    document.addEventListener("keydown", handleTab);
+    return () => {
+      document.removeEventListener("keydown", handleTab);
+    };
+  });
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-chatBg">
+    <div className="flex h-screen w-screen overflow-hidden bg-primary dark:bg-primary-dark">
       {/* Body */}
       <div
-        className={`flex flex-col flex-1 transition-all duration-300 w-full ${
-          isSidebarOpen ? "" : "sm:mr-[-15rem]"
+        className={`flex flex-col flex-1 transition-all duration-500 w-full ${
+          isSidebarOpen ? "" : "md:mr-[-15rem]"
         }`}
       >
         {/* Topbar */}
@@ -31,7 +44,7 @@ function App() {
 
       {/* Sidebar */}
       <div
-        className={`fixed sm:relative top-0 w-[15rem] h-full border-l border-gray-200/20 z-40 transition-all duration-300 overflow-hidden ${
+        className={`fixed md:relative top-0 w-[15rem] h-full border-l border-gray-200/20 z-40 transition-all duration-500 overflow-hidden ${
           isSidebarOpen ? "right-0 opacity-100" : "-right-[15rem] opacity-0"
         }`}
       >

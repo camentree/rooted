@@ -1,5 +1,5 @@
 import {
-  CodeBracketIcon,
+  ChevronDownIcon,
   CalendarIcon,
   ArrowRightStartOnRectangleIcon,
   ArrowLeftStartOnRectangleIcon,
@@ -19,63 +19,51 @@ type ChangeModelButtonProps = {
 export function ChangeModelButton({ onChange }: ChangeModelButtonProps) {
   const { currentModel, setCurrentModel, availableModels } = useConversation();
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (isOpen && !dropdownRef.current?.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
+  function handleChange(modelId: string) {
+    const newModel = availableModels.find((model) => model.model_id === modelId);
+    if (newModel && newModel.model_id !== currentModel.model_id) {
+      setCurrentModel(newModel);
+      onChange?.(newModel);
     }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (isOpen && event.key === "Escape") {
-        setIsOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen]);
-
-  function handleChange(newModel: Model) {
     setIsOpen(false);
-    setCurrentModel(newModel);
-    onChange?.(newModel);
   }
 
   return (
-    <div className="relative inline-block text-left">
-      <div
-        className="flex items-center text-white hover:text-gray-500 cursor-pointer"
+    <div className="w-full">
+      <button
+        className="flex items-center justify-between w-full px-4 py-2 bg-primary dark:bg-secondary-dark text-textPrimary dark:text-textPrimary-dark rounded-md hover:bg-secondary dark:hover:bg-sidebar-dark transition-all"
         onClick={() => setIsOpen((prev) => !prev)}
       >
-        <CodeBracketIcon className="w-8 h-8 p-2 text-inherit" />
-        <span className="text-inherit">{currentModel.name}</span>
-      </div>
+        {currentModel.name}
+        <ChevronDownIcon
+          className={`w-5 h-5 transition-transform duration-500 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
+      </button>
 
-      {isOpen && (
-        <div
-          ref={dropdownRef}
-          className="absolute left-0 mt-1 ml-[1rem] w-48 bg-chatBg border border-gray-700 rounded-md shadow-lg z-50"
-        >
+      <div
+        className={`transition-all] duration-500 ease-in-out overflow-hidden ${
+          isOpen ? "opacity-100 max-h-[100vh]" : "opacity-0 max-h-0 "
+        }`}
+      >
+        <div className="mt-2 w-full bg-secondary dark:bg-sidebar-dark border border-gray-300 dark:border-gray-600 rounded-md shadow-md transition-all duration-300">
           {availableModels
-            .filter((model) => model.model_id !== currentModel.model_id)
+            .filter((model) => model.model_id != currentModel.model_id)
             .map((model) => (
-              <div
+              <button
                 key={model.model_id}
-                onClick={() => handleChange(model)}
-                className="px-4 py-2 text-white cursor-pointer hover:bg-gray-700"
+                className={`w-full text-left px-4 py-2 hover:bg-gray-300 dark:hover:bg-gray-700 transition-all ${
+                  model.model_id === currentModel.model_id ? "font-bold" : ""
+                }`}
+                onClick={() => handleChange(model.model_id)}
               >
                 {model.name}
-              </div>
+              </button>
             ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -93,7 +81,7 @@ export function NewConversationButton({ onCreate }: NewConversationButtonProps) 
 
   return (
     <button onClick={handleClick}>
-      <CalendarIcon className="w-8 h-8 hover:text-gray-500 text-white p-2 flex items-center" />
+      <CalendarIcon className="w-full h-full text-textPrimary dark:text-textPrimary-dark" />
     </button>
   );
 }
@@ -135,10 +123,10 @@ export function RenameConversationButton({ onRename }: RenameConversationButtonP
 
   return (
     <div
-      className="flex items-center text-white hover:text-gray-500 cursor-pointer"
+      className="flex items-center text-textPrimary dark:text-textPrimary-dark hover:text-gray-500 cursor-pointer space-x-2 w-full"
       onClick={() => setIsEditable(true)}
     >
-      <Square3Stack3DIcon className="w-8 h-8 text-inherit p-2" />
+      <Square3Stack3DIcon className="w-[1rem] h-[1rem] flex-shrink-0 text-inherit" />
       {isEditable ? (
         <input
           ref={inputRef}
@@ -147,10 +135,10 @@ export function RenameConversationButton({ onRename }: RenameConversationButtonP
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={handleRename}
-          className="bg-gray-700 text-white px-2 py-1 rounded outline-none focus:ring"
+          className="dark:bg-secondary-dark text-textPrimary dark:text-textPrimary-dark rounded outline-none px-2 py-2 w-full max-w-full"
         />
       ) : (
-        <span className="text-inherit">
+        <span className="text-inherit truncate w-full">
           {currentConversation.conversation_name.split("/").pop()}
         </span>
       )}
@@ -162,11 +150,14 @@ export function SidebarButton() {
   const { isSidebarOpen, toggleSidebar } = useSidebar();
 
   return (
-    <button onClick={toggleSidebar} className="z-50">
+    <button
+      onClick={toggleSidebar}
+      className="text-textPrimary dark:text-textPrimary-dark hover:text-gray-500"
+    >
       {isSidebarOpen ? (
-        <ArrowRightStartOnRectangleIcon className="w-8 h-8 hover:text-gray-500 text-white p-2 flex items-center" />
+        <ArrowRightStartOnRectangleIcon className="w-full h-full text-inherit" />
       ) : (
-        <ArrowLeftStartOnRectangleIcon className="w-8 h-8 hover:text-gray-500 text-white p-2 flex items-center" />
+        <ArrowLeftStartOnRectangleIcon className="w-full h-full text-inherit" />
       )}
     </button>
   );
@@ -177,45 +168,15 @@ type NewProjectButtonProps = {
 };
 export function NewProjectButton({ onCreate }: NewProjectButtonProps) {
   const { socket } = useConversation();
-  const [showPrompt, setShowPrompt] = useState(false);
-  const [projectName, setProjectName] = useState("projects/");
 
   function handleCreate() {
-    socket.emit("request_conversation", { conversation_name: projectName });
+    socket.emit("request_conversation", { conversation_name: "projects/New Project" });
     onCreate?.();
-    setShowPrompt(false);
-    setProjectName("projects/");
-  }
-
-  function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Enter") handleCreate();
-    if (event.key === "Escape") setShowPrompt(false);
   }
 
   return (
-    <div className="flex items-center">
-      <button onClick={() => setShowPrompt(!showPrompt)}>
-        <FolderPlusIcon className="w-8 h-8 hover:text-gray-500 text-white p-2 flex items-center" />
-      </button>
-      {showPrompt && (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleCreate();
-          }}
-        >
-          <input
-            autoFocus
-            type="text"
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onBlur={() => setShowPrompt(false)}
-            placeholder="Project"
-            className="bg-gray-700 text-white px-2 py-1 rounded outline-none focus:ring"
-          />
-        </form>
-      )}
-    </div>
+    <button onClick={handleCreate}>
+      <FolderPlusIcon className="w-full h-full text-textPrimary dark:text-textPrimary-dark" />
+    </button>
   );
 }
