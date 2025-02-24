@@ -132,7 +132,6 @@ export function RenameConversationButton({
       className="flex items-center text-textPrimary dark:text-textPrimary-dark hover:text-gray-500 cursor-pointer space-x-2 w-full"
       onClick={() => setIsEditable(true)}
     >
-      <Square3Stack3DIcon className="w-[1rem] h-[1rem] flex-shrink-0 text-inherit" />
       {isEditable ? (
         <input
           ref={inputRef}
@@ -146,7 +145,10 @@ export function RenameConversationButton({
       ) : (
         <span className="text-inherit truncate w-full">
           {children ?? (
-            <span>{currentConversation.conversation_name.split("/").pop()}</span>
+            <span>
+              <Square3Stack3DIcon className="w-[1rem] h-[1rem] flex-shrink-0 text-inherit" />
+              {currentConversation.conversation_name.split("/").pop()}
+            </span>
           )}
         </span>
       )}
@@ -160,7 +162,7 @@ export function SidebarButton() {
   return (
     <button
       onClick={toggleSidebar}
-      className="text-textPrimary dark:text-textPrimary-dark hover:text-gray-500"
+      className="text-textPrimary dark:text-textPrimary-dark hover:text-gray-400"
     >
       {isSidebarOpen ? (
         <ArrowRightStartOnRectangleIcon className="w-full h-full text-inherit" />

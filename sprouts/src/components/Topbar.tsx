@@ -1,5 +1,6 @@
 import { useConversation } from "../contexts/ConversationContext";
 import { SidebarButton, RenameConversationButton } from "./Buttons";
+import { Square3Stack3DIcon } from "@heroicons/react/24/solid";
 
 export default function Topbar() {
   const { currentConversation } = useConversation();
@@ -10,10 +11,11 @@ export default function Topbar() {
 
   return (
     <div className="flex flex-1 flex-row justify-between items-center bg-secondary dark:bg-secondary-dark min-w-0 min-h-0 px-4 h-[3rem]">
-      <div className="opacity-50 flex items-center w-full">
+      <div className="flex items-center">
         <RenameConversationButton>
-          <div className="flex-1 min-w-0 overflow-hidden">
-            <div className="flex flex-row flex-wrap items-center text-textPrimary dark:text-textPrimary-dark text-sm truncate space-x-3">
+          <div className="inline-flex flex-row flex-1 min-w-0 overflow-hidden text-textPrimary dark:text-textPrimary-dark items-center hover:text-gray-400">
+            <Square3Stack3DIcon className="flex w-[1rem] h-[1rem] flex-shrink-0 text-inherit mr-2" />
+            <div className="flex flex-row flex-wrap items-center text-sm text-inherit truncate space-x-3">
               {fileParts.map((part, idx) => (
                 <div key={idx}>{part}</div>
               ))}
