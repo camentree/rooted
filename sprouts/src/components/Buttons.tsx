@@ -10,6 +10,7 @@ import { useState, useEffect, useRef } from "react";
 
 import { useConversation } from "../contexts/ConversationContext";
 import { useSidebar } from "../contexts/SidebarContext";
+import { useSocket } from "../contexts/SocketContext";
 import { Model } from "../Types";
 
 type ChangeModelButtonProps = {
@@ -72,10 +73,10 @@ type NewConversationButtonProps = {
   onCreate?: () => void;
 };
 export function NewConversationButton({ onCreate }: NewConversationButtonProps) {
-  const { socket } = useConversation();
+  const { socket } = useSocket();
 
   function handleClick() {
-    socket.emit("request_conversation");
+    socket.emit("request_conversation", { conversation_id: null });
     onCreate?.();
   }
 
@@ -91,7 +92,8 @@ type RenameConversationButtonProps = {
 };
 
 export function RenameConversationButton({ onRename }: RenameConversationButtonProps) {
-  const { socket, currentConversation } = useConversation();
+  const { socket } = useSocket();
+  const { currentConversation } = useConversation();
   const [isEditable, setIsEditable] = useState<boolean>(false);
   const [newName, setNewName] = useState<string>(currentConversation.conversation_name);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -167,7 +169,7 @@ type NewProjectButtonProps = {
   onCreate?: () => void;
 };
 export function NewProjectButton({ onCreate }: NewProjectButtonProps) {
-  const { socket } = useConversation();
+  const { socket } = useSocket();
 
   function handleCreate() {
     socket.emit("request_conversation", { conversation_name: "projects/New Project" });

@@ -1,28 +1,29 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 type SidebarContextType = {
   isSidebarOpen: boolean;
-  toggleSidebar: (isOpen?: boolean) => void;
+  toggleSidebar: () => void;
+  setIsSidebarOpen: (isOpen: boolean) => void;
 };
 
 const SidebarContext = createContext<SidebarContextType | null>(null);
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
-    const storedState = localStorage.getItem("sidebarState");
+    const storedState = sessionStorage.getItem("sidebarState");
     return storedState !== null ? JSON.parse(storedState) : window.innerWidth >= 768;
   });
 
+  useEffect(() => {
+    sessionStorage.setItem("sidebarState", String(isSidebarOpen));
+  }, [isSidebarOpen]);
+
   function toggleSidebar() {
-    setIsSidebarOpen((prev) => {
-      const newState = !prev;
-      localStorage.setItem("sidebarState", JSON.stringify(newState));
-      return newState;
-    });
+    setIsSidebarOpen((prev) => !prev);
   }
 
   return (
-    <SidebarContext.Provider value={{ isSidebarOpen, toggleSidebar }}>
+    <SidebarContext.Provider value={{ isSidebarOpen, setIsSidebarOpen, toggleSidebar }}>
       {children}
     </SidebarContext.Provider>
   );

@@ -35,8 +35,7 @@ def handle_initialization():
 
 
 @socketio.on("request_conversation")
-def handle_conversation_request(data: dict[str | int, str] | None = None):
-    data = data or {}
+def handle_conversation_request(data: dict[str | int, str]):
     conversation_id = data.get("conversation_id", None)
     conversation_name = data.get("conversation_name", None)
 

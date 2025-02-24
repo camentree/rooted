@@ -1,12 +1,9 @@
-import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
-import { io, Socket } from "socket.io-client";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Conversation, Model } from "../Types";
+import { useSocket } from "./SocketContext";
 import LoadingOverlay from "../components/LoadingOverlay";
 
-const SOCKET_URL = "http://localhost:5001";
-
 type ConversationContextType = {
-  socket: Socket;
   currentModel: Model;
   currentConversation: Conversation;
   availableConversations: Conversation[];
@@ -18,6 +15,7 @@ type ConversationContextType = {
 const ConversationContext = createContext<ConversationContextType | null>(null);
 
 export function ConversationProvider({ children }: { children: ReactNode }) {
+  const { socket } = useSocket();
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(
     null
   );
@@ -30,25 +28,12 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
     []
   );
   const [availableModels, setAvailableModels] = useState<Model[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
-  const [isFullyLoaded, setIsFullyLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  const socketRef = useRef<Socket | null>(null);
-
-  // Initialize connection
+  // handle new socket
   useEffect(() => {
-    const socketInstance = io(SOCKET_URL, {
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 2000,
-    });
-    socketRef.current = socketInstance;
-
-    function handleBackendInitialization() {
-      setIsConnected(true);
-      socketInstance.emit("request_models");
-      socketInstance.emit("request_conversations");
-    }
+    socket.emit("request_models");
+    socket.emit("request_conversations");
 
     function handleConversationsResponse(conversations: Conversation[]) {
       setAvailableConversations(conversations);
@@ -62,73 +47,57 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
       setAvailableModels(models);
     }
 
-    socketInstance.on("initialized", handleBackendInitialization);
-    socketInstance.on("conversations_response", handleConversationsResponse);
-    socketInstance.on("conversation_update", handleConversationUpdate);
-    socketInstance.on("models_response", handleModelsResponse);
-    socketInstance.emit("initialize");
-
-    return () => {
-      socketInstance.off("initialized", handleBackendInitialization);
-      socketInstance.off("conversations_response", handleConversationsResponse);
-      socketInstance.off("conversation_update", handleConversationUpdate);
-      socketInstance.off("models_response", handleModelsResponse);
-      socketInstance.disconnect();
-    };
-  }, []);
-
-  // Update conversation response listener
-  useEffect(() => {
     function handleConversationResponse(conversation: Conversation) {
-      if (!socketRef.current || !isConnected || availableModels.length === 0) return;
-
-      const lastModel = availableModels.find(
-        (model) => model.model_id === conversation.messages.at(-1)?.model_id
-      );
-
-      setCurrentModel(lastModel || availableModels[0]);
+      if (!socket) return;
       setCurrentConversation((prev) =>
         prev?.conversation_id === conversation.conversation_id ? prev : conversation
       );
-      localStorage.setItem("conversationID", String(conversation.conversation_id));
-      socketRef.current.emit("request_conversations");
+      socket.emit("request_conversations");
     }
 
-    if (!socketRef.current || !isConnected || availableModels.length === 0) {
-      setIsFullyLoaded(true);
-    }
-    socketRef.current?.on("conversation_response", handleConversationResponse);
+    socket.on("conversation_response", handleConversationResponse);
+    socket.on("conversations_response", handleConversationsResponse);
+    socket.on("conversation_update", handleConversationUpdate);
+    socket.on("models_response", handleModelsResponse);
+    setIsLoaded(true);
+
     return () => {
-      socketRef.current?.off("conversation_response", handleConversationResponse);
+      socket.off("conversation_response", handleConversationResponse);
+      socket.off("conversations_response", handleConversationsResponse);
+      socket.off("conversation_update", handleConversationUpdate);
+      socket.off("models_response", handleModelsResponse);
+      setIsLoaded(false);
     };
-  }, [isConnected, availableModels]);
+  }, [socket]);
 
+  // handle first conversation loading
   useEffect(() => {
-    if (!socketRef.current || !isFullyLoaded) return;
+    if (!isLoaded) return;
 
     const storedConvesationID = localStorage.getItem("conversationID");
-    if (storedConvesationID) {
-      socketRef.current.emit("request_conversation", {
-        conversation_id: Number(storedConvesationID),
-      });
-    } else {
-      socketRef.current.emit("request_conversation");
-    }
-  }, [isConnected, isFullyLoaded]);
 
-  // Don't render anything if not connected
-  if (!isConnected || !socketRef.current || !currentConversation) {
-    return null;
-  }
+    socket.emit("request_conversation", {
+      conversation_id:
+        storedConvesationID !== undefined ? Number(storedConvesationID) : null,
+    });
+  }, [socket, isLoaded]);
 
-  // Show loading screen if the socket is connected but conversation is still loading
-  if (isConnected && !isFullyLoaded) {
-    return <LoadingOverlay isLoading={true} />;
-  }
+  // handle conversation change
+  useEffect(() => {
+    if (!currentConversation) return;
+
+    const lastModelUsed = availableModels.find(
+      (model) => model.model_id === currentConversation.messages.at(-1)?.model_id
+    );
+    setCurrentModel(lastModelUsed || availableModels[0]);
+
+    localStorage.setItem("conversationID", String(currentConversation.conversation_id));
+    return () => {};
+  }, [currentConversation, availableModels]);
 
   function setCurrentConversationByID(conversationID: number) {
-    if (socketRef.current) {
-      socketRef.current.emit("request_conversation", { conversation_id: conversationID });
+    if (socket) {
+      socket.emit("request_conversation", { conversation_id: conversationID });
       localStorage.setItem("conversationID", String(conversationID));
     }
   }
@@ -140,10 +109,13 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  if (!currentConversation || !currentModel) {
+    return <LoadingOverlay isLoading={true} />;
+  }
+
   return (
     <ConversationContext.Provider
       value={{
-        socket: socketRef.current,
         currentConversation: currentConversation,
         availableConversations: availableConversations,
         setCurrentConversationByID: setCurrentConversationByID,

@@ -9,9 +9,11 @@ import TextInput from "./TextInput";
 import ChatMessage from "./ChatMessage";
 import Modal from "./Modal";
 import { Message, MessageState, BackendState } from "../Types";
+import { useSocket } from "../contexts/SocketContext";
 
 export default function Chat() {
-  const { socket, currentConversation, currentModel } = useConversation();
+  const { socket } = useSocket();
+  const { currentConversation, currentModel } = useConversation();
   const { isSidebarOpen, toggleSidebar } = useSidebar();
 
   const [isInitialized, setIsInitialized] = useState<boolean>(false);

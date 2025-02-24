@@ -1,18 +1,18 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-
+import React from "react";
+import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
-import { ConversationProvider } from "./contexts/ConversationContext";
+import { SocketProvider } from "./contexts/SocketContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
+import { ConversationProvider } from "./contexts/ConversationContext";
 
-import "./index.css";
-
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <ConversationProvider>
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <SocketProvider>
       <SidebarProvider>
-        <App />
+        <ConversationProvider>
+          <App />
+        </ConversationProvider>
       </SidebarProvider>
-    </ConversationProvider>
-  </StrictMode>
+    </SocketProvider>
+  </React.StrictMode>
 );
