@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useRef,
-  ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
 import { io, Socket } from "socket.io-client";
 import { Conversation, Model } from "../Types";
 import LoadingOverlay from "../components/LoadingOverlay";
@@ -119,7 +112,7 @@ export function ConversationProvider({ children }: { children: ReactNode }) {
         conversation_id: Number(storedConvesationID),
       });
     } else {
-      socketRef.current.emit("request_daily_conversation");
+      socketRef.current.emit("request_conversation");
     }
   }, [isConnected, isFullyLoaded]);
 
